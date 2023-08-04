@@ -65,16 +65,23 @@ fn main() {
     let output = unet.forward(input, timesteps, context);*/
     //print_tensor(output);
 
+    println!("Loading tokenizer...");
     let tokenizer = SimpleTokenizer::new().unwrap();
+
+    println!("Loading Stable Diffusion...");
     let sd: StableDiffusion<Backend> = load_stable_diffusion("params", &device).unwrap();
+    let sd = sd.to_device(&device);
 
     let unconditional_guidance_scale = 7.5;
     let unconditional_context = sd.unconditional_context(&tokenizer);
-    let context = sd.context(&tokenizer, "A rainbow pony is flying.").unsqueeze();
+    let context = sd.context(&tokenizer, "A wine glass filled with pink flower petals.").unsqueeze();
 
-    let n_steps = 5;
+    let n_steps = 100;
 
+    println!("Sampling images...");
     let images = sd.sample_image(context, unconditional_context, unconditional_guidance_scale, n_steps);
+
+    println!("Saving images...");
     save_images(&images, "image_samples/", 512, 512).unwrap();
 }
 

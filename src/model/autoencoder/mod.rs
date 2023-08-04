@@ -43,14 +43,6 @@ impl AutoencoderConfig {
 }
 
 
-fn print_tensor<B: Backend>(x: Tensor<B, 4>) {
-    let [_, channels, height, width] = x.dims();
-    let channels = channels.min(10);
-    let data = x.slice([0..1, 0..channels, 0..height, 0..width]).into_data();
-    println!("{:?}", data);
-}
-
-
 #[derive(Module, Debug)]
 pub struct Autoencoder<B: Backend> {
     encoder: Encoder<B>, 

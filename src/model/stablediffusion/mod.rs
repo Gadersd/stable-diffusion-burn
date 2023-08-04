@@ -85,19 +85,21 @@ impl<B: Backend> StableDiffusion<B> {
             let start = b * num_elements_per_image;
             let end = start + num_elements_per_image;
 
-            flattened[start..end].into_iter().map(|v| v.to_u8().unwrap()).collect()
+            flattened[start..end].into_iter().map(|v| v.to_f64().unwrap().min(255.0).max(0.0).to_u8().unwrap()).collect()
         }).collect()
     }
 
     pub fn sample_latent(&self, context: Tensor<B, 3>, unconditional_context: Tensor<B, 2>, unconditional_guidance_scale: f64, n_steps: usize) -> Tensor<B, 4> {
         assert!(self.n_steps % n_steps == 0);
 
+        let device = context.device();
+
         let step_size = self.n_steps / n_steps;
 
         let [n_batches, _, _] = context.dims();
 
         let gen_noise = || {
-            Tensor::random([n_batches, 4, 64, 64], Distribution::Normal(0.0, 1.0) )
+            Tensor::random([n_batches, 4, 64, 64], Distribution::Normal(0.0, 1.0)).to_device(&device)
         };
 
         let sigma = 0.0; // Use deterministic diffusion
@@ -114,7 +116,7 @@ impl<B: Backend> StableDiffusion<B> {
 
             let sqrt_noise = (1.0 - current_alpha).sqrt();
 
-            let timestep = Tensor::from_ints([t as i32]);
+            let timestep = Tensor::from_ints([t as i32]).to_device(&device);
             let pred_noise = self.forward_diffuser(latent.clone(), timestep, context.clone(), unconditional_context.clone(), unconditional_guidance_scale);
 
             let predx0 = (latent - pred_noise.clone() * sqrt_noise) / current_alpha.sqrt();
@@ -128,17 +130,29 @@ impl<B: Backend> StableDiffusion<B> {
     }
 
     fn forward_diffuser(&self, latent: Tensor<B, 4>, timestep: Tensor<B, 1, Int>, context: Tensor<B, 3>, unconditional_context: Tensor<B, 2>, unconditional_guidance_scale: f64) -> Tensor<B, 4> {
-        let [n_batch, n_channel, height, width] = latent.dims();
-        let latent = latent.repeat(0, 2);
+        ///let [n_batch, n_channel, height, width] = latent.dims();
+        //let latent = latent.repeat(0, 2);
 
-        let latent = self.diffusion.forward(
+        let unconditional_latent = self.diffusion.forward(
+            latent.clone(), 
+            timestep.clone(), 
+            unconditional_context.unsqueeze()
+        );
+
+        let conditional_latent = self.diffusion.forward(
+            latent, 
+            timestep, 
+            context
+        );
+
+        /*let latent = self.diffusion.forward(
             latent.repeat(0, 2), 
             timestep.repeat(0, 2), 
             Tensor::cat(vec![unconditional_context.unsqueeze::<3>(), context], 0)
         );
 
         let unconditional_latent = latent.clone().slice([0..n_batch]);
-        let conditional_latent = latent.slice([n_batch..2 * n_batch]);
+        let conditional_latent = latent.slice([n_batch..2 * n_batch]);*/
 
         unconditional_latent.clone() + (conditional_latent - unconditional_latent) * unconditional_guidance_scale
     }
@@ -148,10 +162,11 @@ impl<B: Backend> StableDiffusion<B> {
     }
 
     pub fn context(&self, tokenizer: &SimpleTokenizer, text: &str) -> Tensor<B, 3> {
+        let device = &self.devices()[0];
         let text = format!("<|startoftext|>{}<|endoftext|>", text);
         let tokenized: Vec<_> = tokenizer.encode(&text).into_iter().map(|v| v as i32).collect();
 
-        self.clip.forward(Tensor::from_ints(&tokenized[..]).unsqueeze())
+        self.clip.forward(Tensor::from_ints(&tokenized[..]).to_device(device).unsqueeze())
     }
 }
 

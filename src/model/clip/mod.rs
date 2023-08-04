@@ -59,7 +59,7 @@ impl<B: Backend> CLIP<B> {
     pub fn forward(&self, x: Tensor<B, 2, Int>) -> Tensor<B, 3> {
         let [n_batch, seq_len] = x.dims();
         
-        let mask = attn_decoder_mask(seq_len);
+        let mask = attn_decoder_mask(seq_len, &x.device());
 
         let embedded = self.token_embedding.forward(x) 
             + self.position_embedding.val().slice([0..seq_len]).unsqueeze();

@@ -113,7 +113,6 @@ impl<B: Backend> UNet<B> {
 
         // input blocks
         for block in self.input_blocks.as_array() {
-            println!("{:?}", x.clone().flatten::<1>(0, 3).slice([0..100]).into_data());
             x = block.forward(x, emb.clone(), context.clone());
             saved_inputs.push(x.clone())
         }
