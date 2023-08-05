@@ -114,7 +114,6 @@ impl<B: Backend> StableDiffusion<B> {
 
             let timestep = Tensor::from_ints([t as i32]).to_device(&device);
             let pred_noise = self.forward_diffuser(latent.clone(), timestep, context.clone(), unconditional_context.clone(), unconditional_guidance_scale);
-
             let predx0 = (latent - pred_noise.clone() * sqrt_noise) / current_alpha.sqrt();
             let dir_latent = pred_noise * (1.0 - prev_alpha - sigma * sigma).sqrt();
 

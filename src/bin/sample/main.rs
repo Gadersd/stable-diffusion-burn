@@ -61,7 +61,6 @@ fn main() {
             process::exit(1);
         })
     };
-    
      
     let sd = sd.to_device(&device);
 
