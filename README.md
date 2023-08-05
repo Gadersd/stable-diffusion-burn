@@ -23,10 +23,12 @@ Invoke the sample binary provided in the rust code, as shown below:
 
 ```bash
 # Arguments: <model_type(burn or dump)> <model> <unconditional_guidance_scale> <n_diffusion_steps> <prompt> <output_image>
-cargo run --release --bin sample burn SDv1-4 7.5 20 "A half-eaten apple sitting on a desk." apple
+cargo run --release --bin sample burn SDv1-4 7.5 20 "An ancient mossy stone." img
 ```
 
-This command will generate an image according to the provided prompt, which will be saved as 'apple.png'.
+This command will generate an image according to the provided prompt, which will be saved as 'img0.png'.
+
+![An image of an ancient mossy stone](img0.png)
 
 ### Optional: Extract and Convert a Fine-Tuned Model
 
