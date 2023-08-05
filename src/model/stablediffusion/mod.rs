@@ -125,13 +125,13 @@ impl<B: Backend> StableDiffusion<B> {
     }
 
     fn forward_diffuser(&self, latent: Tensor<B, 4>, timestep: Tensor<B, 1, Int>, context: Tensor<B, 3>, unconditional_context: Tensor<B, 2>, unconditional_guidance_scale: f64) -> Tensor<B, 4> {
-        ///let [n_batch, n_channel, height, width] = latent.dims();
+        let [n_batch, _, _, _] = latent.dims();
         //let latent = latent.repeat(0, 2);
 
         let unconditional_latent = self.diffusion.forward(
             latent.clone(), 
             timestep.clone(), 
-            unconditional_context.unsqueeze()
+            unconditional_context.unsqueeze().repeat(0, n_batch)
         );
 
         let conditional_latent = self.diffusion.forward(

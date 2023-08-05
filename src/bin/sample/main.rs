@@ -66,7 +66,7 @@ fn main() {
     let sd = sd.to_device(&device);
 
     let unconditional_context = sd.unconditional_context(&tokenizer);
-    let context = sd.context(&tokenizer, prompt).unsqueeze();
+    let context = sd.context(&tokenizer, prompt).unsqueeze().repeat(0, 2); // generate 2 samples
 
     println!("Sampling image...");
     let images = sd.sample_image(context, unconditional_context, unconditional_guidance_scale, n_steps);
