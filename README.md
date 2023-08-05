@@ -62,8 +62,4 @@ Remember, `convert` should be used if you're planning on using the fine-tuned ve
 
 This project is licensed under MIT license.
 
-## Example Inference
-
-INSER IMAGE HERE
-
 We wish you a productive time using this project. Enjoy!
