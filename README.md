@@ -19,11 +19,13 @@ export TORCH_CUDA_VERSION=cu113
 ```
 ### Step 2: Run the Sample Binary
 
-Invoke the sample binary provided in the rust code, as shown below:
+Invoke the sample binary provided in the rust code, as shown below. Loading the burn model file
+is currently very slow, but hopefully that will be rectified soon. You can also dump a torch model's weights and load that
+which is currently much faster.
 
 ```bash
-# Arguments: model unconditional_guidance_scale n_diffusion_steps prompt output_image
-cargo run --release --bin sample SDv1-4 7.5 20 "A half-eaten apple sitting on a desk." apple.png
+# Arguments: <model_type(burn or dump)> <model> <unconditional_guidance_scale> <n_diffusion_steps> <prompt> <output_image>
+cargo run --release --bin sample burn SDv1-4 7.5 20 "A half-eaten apple sitting on a desk." apple
 ```
 
 This command will generate an image according to the provided prompt, which will be saved as 'apple.png'.

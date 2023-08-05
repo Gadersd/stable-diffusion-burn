@@ -29,7 +29,7 @@ fn main() {
     let device = TchDevice::Cuda(0);
 
     let args: Vec<String> = std::env::args().collect();
-    if args.len() != 6 {
+    if args.len() != 7 {
         eprintln!("Usage: {} <model_type(burn or dump)> <model_name> <unconditional_guidance_scale> <n_diffusion_steps> <prompt> <output_image_name>", args[0]);
         process::exit(1);
     }
