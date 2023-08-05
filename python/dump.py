@@ -589,6 +589,7 @@ class StableDiffusion:
 # this is sd-v1-4.ckpt
 FILENAME = Path(__file__).parent.parent / "weights/sd-v1-4.ckpt"
 
+import sys
 import clip as clipsave
 import autoencoder as autoencodersave
 import unet as unetsave
@@ -631,14 +632,20 @@ if __name__ == "__main__":
   output = unet(input, timesteps, context)
   #print(output.numpy())'''
 
+  if len(sys.argv) != 2:
+        print(f"Wrong command line parameters, Usage: python3 {sys.argv[0]} <model_filename>")
+        sys.exit()
+
+  FILENAME = sys.argv[1]
 
   Tensor.no_grad = True
   model = StableDiffusion()
 
   # load in weights
-  download_file('https://huggingface.co/CompVis/stable-diffusion-v-1-4-original/resolve/main/sd-v1-4.ckpt', FILENAME)
+  #download_file('https://huggingface.co/CompVis/stable-diffusion-v-1-4-original/resolve/main/sd-v1-4.ckpt', FILENAME)
   load_state_dict(model, torch_load(FILENAME)['state_dict'], strict=False)
 
-  print('Saving model...')
+  print('Dumping model...')
   sdsave.save_stable_diffusion(model, "params")
-  print('Model saved.')
+  print('Model weights saved in params.')
+
