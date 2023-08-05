@@ -1,4 +1,4 @@
-use bincode::{self, Options};
+use bincode;
 use burn::record::{PrecisionSettings, Recorder, RecorderError, FileRecorder};
 use std::fs::File;
 use std::io::{BufReader, BufWriter};
@@ -7,9 +7,9 @@ use std::marker::PhantomData;
 use serde::{de::DeserializeOwned, Serialize};
 //use super::{bin_config, PrecisionSettings, Recorder, RecorderError};
 
-/*fn bin_config() -> bincode::config::Configuration {
+fn bin_config() -> bincode::config::Configuration {
     bincode::config::standard()
-}*/
+}
 
 macro_rules! str2reader {
     ($file:expr) => {{
@@ -69,8 +69,9 @@ impl<S: PrecisionSettings> Recorder for BinFileRecorderBuffered<S> {
         item: I,
         mut file: Self::RecordArgs,
     ) -> Result<(), RecorderError> {
+        let config = bin_config();
         let mut writer = str2writer!(file)?;
-        bincode::serialize_into(&mut writer, &item)
+        bincode::serde::encode_into_std_write(&item, &mut writer, config)
             .map_err(|err| RecorderError::Unknown(err.to_string()))?;
         Ok(())
     }
@@ -78,7 +79,7 @@ impl<S: PrecisionSettings> Recorder for BinFileRecorderBuffered<S> {
     fn load_item<I: DeserializeOwned>(&self, mut file: Self::LoadArgs) -> Result<I, RecorderError> {
         let mut reader = str2reader!(file)?;
         let state =
-            bincode::deserialize_from(&mut reader)
+            bincode::serde::decode_from_std_read(&mut reader, bin_config())
                 .map_err(|err| RecorderError::Unknown(err.to_string()))?;
         Ok(state)
     }

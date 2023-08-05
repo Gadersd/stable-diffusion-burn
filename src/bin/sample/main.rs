@@ -16,7 +16,7 @@ use std::io;
 use std::process;
 
 use burn::record::{self, Recorder, FullPrecisionSettings};
-use stablediffusion::binrecorder::{BinFileRecorderBuffered};
+use stablediffusion::binrecorderfast::{BinFileRecorderBuffered};
 
 fn load_stable_diffusion_model_file<B: Backend>(filename: &str) -> Result<StableDiffusion<B>, record::RecorderError> {
     BinFileRecorderBuffered::<FullPrecisionSettings>::new()

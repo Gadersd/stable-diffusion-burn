@@ -19,9 +19,7 @@ export TORCH_CUDA_VERSION=cu113
 ```
 ### Step 2: Run the Sample Binary
 
-Invoke the sample binary provided in the rust code, as shown below. Loading the burn model file
-is currently very slow, but hopefully that will be rectified soon. You can also dump a torch model's weights and load that
-which is currently much faster.
+Invoke the sample binary provided in the rust code, as shown below:
 
 ```bash
 # Arguments: <model_type(burn or dump)> <model> <unconditional_guidance_scale> <n_diffusion_steps> <prompt> <output_image>

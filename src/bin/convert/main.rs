@@ -17,7 +17,7 @@ use burn::{
 use burn_tch::{TchBackend, TchDevice};
 
 use burn::record::{self, Recorder, FullPrecisionSettings};
-use stablediffusion::binrecorder::{BinFileRecorderBuffered};
+use stablediffusion::binrecorderfast::{BinFileRecorderBuffered};
 
 fn convert_dump_to_model<B: Backend>(dump_path: &str, model_name: &str, device: &B::Device) -> Result<(), Box<dyn Error>> {
     println!("Loading dump...");
