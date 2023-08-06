@@ -22,11 +22,10 @@ use std::env;
 use std::io;
 use std::process;
 
-use burn::record::{self, Recorder, FullPrecisionSettings};
-use stablediffusion::binrecorderfast::{BinFileRecorderBuffered};
+use burn::record::{self, Recorder, BinFileRecorder, FullPrecisionSettings};
 
 fn load_stable_diffusion_model_file<B: Backend>(filename: &str) -> Result<StableDiffusion<B>, record::RecorderError> {
-    BinFileRecorderBuffered::<FullPrecisionSettings>::new()
+    BinFileRecorder::<FullPrecisionSettings>::new()
     .load(filename.into())
     .map(|record| StableDiffusionConfig::new().init().load_record(record))
 }

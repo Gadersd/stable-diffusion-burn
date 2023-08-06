@@ -22,8 +22,7 @@ cfg_if::cfg_if! {
     }
 }
 
-use burn::record::{self, Recorder, FullPrecisionSettings};
-use stablediffusion::binrecorderfast::{BinFileRecorderBuffered};
+use burn::record::{self, Recorder, BinFileRecorder, FullPrecisionSettings};
 
 fn convert_dump_to_model<B: Backend>(dump_path: &str, model_name: &str, device: &B::Device) -> Result<(), Box<dyn Error>> {
     println!("Loading dump...");
@@ -36,7 +35,7 @@ fn convert_dump_to_model<B: Backend>(dump_path: &str, model_name: &str, device: 
 }
 
 fn save_model_file<B: Backend>(model: StableDiffusion<B>, name: &str) -> Result<(), record::RecorderError> {
-    BinFileRecorderBuffered::<FullPrecisionSettings>::new()
+    BinFileRecorder::<FullPrecisionSettings>::new()
     .record(
         model.into_record(),
         name.into(),

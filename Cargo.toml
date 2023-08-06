@@ -11,15 +11,17 @@ torch-backend = ["burn-tch"]
 wgpu-backend = ["burn-wgpu"]
 
 [dependencies.burn-tch]
-version = "0.8.0"
+package = "burn-tch"
+git = "https://github.com/burn-rs/burn.git"
 optional = true
 
 [dependencies.burn-wgpu]
-version = "0.8.0"
+package = "burn-wgpu"
+git = "https://github.com/burn-rs/burn.git"
 optional = true
 
 [dependencies]
-burn = "0.8.0"
+burn = { git = "https://github.com/burn-rs/burn.git" }
 serde = {version = "1.0.171", features = ["std", "derive"]}
 npy = "0.4.0"
 num-traits = "0.2.15"
