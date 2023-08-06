@@ -20,7 +20,7 @@ Start by downloading the SDv1-4.bin model provided on HuggingFace.
 wget https://huggingface.co/Gadersd/Stable-Diffusion-Burn/resolve/main/V1/SDv1-4.bin
 ```
 
-Next, set the appropriate CUDA version.
+Next, set the appropriate CUDA version. It may be possible to run the model using wgpu without the need for torch in the future using `cargo run --features wgpu-backend...` but currently wgpu doesn't support buffer sizes large enough for Stable Diffusion.
 
 ```bash
 export TORCH_CUDA_VERSION=cu113

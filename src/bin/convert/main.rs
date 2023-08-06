@@ -14,7 +14,13 @@ use burn::{
     },
 };
 
-use burn_tch::{TchBackend, TchDevice};
+cfg_if::cfg_if! {
+    if #[cfg(feature = "torch-backend")] {
+        use burn_tch::{TchBackend, TchDevice};
+    } else if #[cfg(feature = "wgpu-backend")] {
+        use burn_wgpu::{WgpuBackend, WgpuDevice, AutoGraphicsApi};
+    }
+}
 
 use burn::record::{self, Recorder, FullPrecisionSettings};
 use stablediffusion::binrecorderfast::{BinFileRecorderBuffered};
@@ -38,8 +44,15 @@ fn save_model_file<B: Backend>(model: StableDiffusion<B>, name: &str) -> Result<
 }
 
 fn main() {
-    type Backend = TchBackend<f32>;
-    let device = TchDevice::Cpu;
+    cfg_if::cfg_if! {
+        if #[cfg(feature = "torch-backend")] {
+            type Backend = TchBackend<f32>;
+            let device = TchDevice::Cpu;
+        } else if #[cfg(feature = "wgpu-backend")] {
+            type Backend = WgpuBackend<AutoGraphicsApi, f32, i32>;
+            let device = WgpuDevice::CPU;
+        }
+    }
 
     let args: Vec<String> = env::args().collect();
     if args.len() != 3 {
