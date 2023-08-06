@@ -2,6 +2,14 @@
 
 Stable-Diffusion-Burn is a Rust-based project which ports the V1 stable diffusion model into the deep learning framework, Burn. This repository is licensed under the MIT Licence.
 
+## Support The Project
+
+Stable-Diffusion-Burn is a passion project that is open and free to all. I want to empower everyone with reliable AI that can be run by ourselves on our own hardware to ensure that great AI is not limited to the hands of the few. If you support this vision consider supporting me so that I can continue on this journey and produce more projects such as Stable Diffusion XL in Rust.
+
+* Become a patron! Visit my [Patreon page](https://patreon.com/Gadersd) and check out the ways to connect and support this and my other projects. Patrons get early access and a say in what I develop in the future.
+
+Any contribution would be greatly appreciated. Thanks!
+
 ## How To Use
 
 ### Step 1: Download the Model and Set Environment Variables
