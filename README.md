@@ -50,7 +50,7 @@ cd python
 wget https://huggingface.co/CompVis/stable-diffusion-v-1-4-original/resolve/main/sd-v1-4.ckpt
 
 # Extract the weights
-python3 dump.py sd-v1-4.ckpt
+CPU=1 python3 dump.py sd-v1-4.ckpt
 
 # Move the extracted weight folder out
 mv params ..
