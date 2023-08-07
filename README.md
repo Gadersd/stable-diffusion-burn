@@ -40,7 +40,7 @@ This command will generate an image according to the provided prompt, which will
 
 ### Optional: Extract and Convert a Fine-Tuned Model
 
-If users are interested in using a fine-tuned version of stable diffusion, the Python scripts provided in this project can be used to transform a weight dump into a Burn model file.
+If users are interested in using a fine-tuned version of stable diffusion, the Python scripts provided in this project can be used to transform a weight dump into a Burn model file. Note: the tinygrad dependency should be installed from source rather than with pip.
 
 ```bash
 # Step into the Python directory
