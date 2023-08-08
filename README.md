@@ -20,18 +20,19 @@ Start by downloading the SDv1-4.bin model provided on HuggingFace.
 wget https://huggingface.co/Gadersd/Stable-Diffusion-Burn/resolve/main/V1/SDv1-4.bin
 ```
 
-Next, set the appropriate CUDA version. It may be possible to run the model using wgpu without the need for torch in the future using `cargo run --features wgpu-backend...` but currently wgpu doesn't support buffer sizes large enough for Stable Diffusion.
-
-```bash
-export TORCH_CUDA_VERSION=cu113
-```
 ### Step 2: Run the Sample Binary
 
-Invoke the sample binary provided in the rust code, as shown below:
+Invoke the sample binary provided in the rust code. By default, wgpu is used which requires a gpu with at least 10 GB of VRAM (will be lower in the future), but torch can be used with the `torch-backend` feature and can run on a 6 GB gpu.
 
 ```bash
+# wgpu (NEEDS >= 10 GB VRAM)
 # Arguments: <model_type(burn or dump)> <model> <unconditional_guidance_scale> <n_diffusion_steps> <prompt> <output_image>
 cargo run --release --bin sample burn SDv1-4 7.5 20 "An ancient mossy stone." img
+
+# torch (at least 6 GB VRAM, possibly less)
+export TORCH_CUDA_VERSION=cu113
+# Arguments: <model_type(burn or dump)> <model> <unconditional_guidance_scale> <n_diffusion_steps> <prompt> <output_image>
+cargo run --release --features torch-backend --bin sample burn SDv1-4 7.5 20 "An ancient mossy stone." img
 ```
 
 This command will generate an image according to the provided prompt, which will be saved as 'img0.png'.
