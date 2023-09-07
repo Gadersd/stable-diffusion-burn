@@ -1,12 +1,7 @@
 use burn::{
     module::Module,
-    tensor::{
-        backend::Backend,
-        activation::sigmoid, 
-        Tensor,
-    },
+    tensor::{activation::sigmoid, backend::Backend, Tensor},
 };
-
 
 #[derive(Module, Clone, Debug)]
 pub struct SILU {}
