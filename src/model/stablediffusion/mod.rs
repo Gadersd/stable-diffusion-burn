@@ -8,6 +8,8 @@ use burn::{
 
 use num_traits::ToPrimitive;
 
+use crate::backend::Backend as MyBackend;
+
 use super::autoencoder::{Autoencoder, AutoencoderConfig};
 use super::clip::{CLIPConfig, CLIP};
 use super::unet::{UNet, UNetConfig};
@@ -44,7 +46,7 @@ pub struct StableDiffusion<B: Backend> {
     clip: CLIP<B>,
 }
 
-impl<B: Backend> StableDiffusion<B> {
+impl<B: MyBackend> StableDiffusion<B> {
     pub fn sample_image(
         &self,
         context: Tensor<B, 3>,
