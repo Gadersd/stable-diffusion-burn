@@ -38,7 +38,7 @@ fn main() {
             let device = WgpuDevice::BestAvailable;
         } else {
             type Backend = LibTorch<f32>;
-            let device = LibTorchDevice::Cpu;
+            let device = LibTorchDevice::Cuda(0);
         }
     }
 
