@@ -23,12 +23,13 @@ pub trait Backend: burn::tensor::backend::Backend {
     }
 }
 
+use burn::backend;
 use burn::tensor::ops::TensorOps;
 use burn::tensor::Float;
 use burn_tch::{self, TchElement, TchTensor};
 use tch;
 
-impl<E: TchElement> Backend for burn_tch::TchBackend<E> {
+impl<E: TchElement> Backend for burn_tch::LibTorch<E> {
     fn qkv_attention(
         q: Self::TensorPrimitive<3>,
         k: Self::TensorPrimitive<3>,
@@ -68,6 +69,7 @@ impl<E: TchElement> Backend for burn_tch::TchBackend<E> {
                 Some(mask.tensor),
                 0.0,
                 false,
+                None,
             ),
         ))
         .swap_dims(1, 2)
@@ -75,11 +77,6 @@ impl<E: TchElement> Backend for burn_tch::TchBackend<E> {
         .into_primitive()
     }
 }
-
-use burn_autodiff;
-
-impl<B: Backend> Backend for burn_autodiff::ADBackendDecorator<B> {}
-
 use std::f32::NEG_INFINITY;
 
 fn qkv_attention<B: Backend>(
