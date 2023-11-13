@@ -18,11 +18,11 @@ burn = { git = "https://github.com/burn-rs/burn.git" }
 burn-ndarray = { package = "burn-ndarray", git = "https://github.com/burn-rs/burn.git" }
 burn-tch = { package = "burn-tch", git = "https://github.com/burn-rs/burn.git" }
 burn-autodiff = { package = "burn-autodiff", git = "https://github.com/burn-rs/burn.git" }
-tch = "0.13.0"
-serde = {version = "1.0.171", features = ["std", "derive"]}
+tch = "0.14.0"
+serde = {version = "1.0.192", features = ["std", "derive"]}
 npy = "0.4.0"
 num-traits = "0.2.15"
 rust_tokenizers = "8.1.0"
 regex = "1.9.1"
 image = "0.24.6"
-cfg-if = "0.1"
+cfg-if = "0.1.0"
