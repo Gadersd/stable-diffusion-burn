@@ -12,7 +12,7 @@ use burn::{
 
 cfg_if::cfg_if! {
     if #[cfg(feature = "wgpu-backend")] {
-        use burn_wgpu::{WgpuBackend, WgpuDevice, AutoGraphicsApi};
+        use burn_wgpu::{Wgpu, WgpuDevice, AutoGraphicsApi};
     } else {
         use burn_tch::{LibTorch, LibTorchDevice};
     }
@@ -26,16 +26,21 @@ use burn::record::{self, BinFileRecorder, FullPrecisionSettings, Recorder};
 
 fn load_stable_diffusion_model_file<B: Backend>(
     filename: &str,
+    device: &B::Device,
 ) -> Result<StableDiffusion<B>, record::RecorderError> {
     BinFileRecorder::<FullPrecisionSettings>::new()
-        .load(filename.into())
-        .map(|record| StableDiffusionConfig::new().init().load_record(record))
+        .load(filename.into(), device)
+        .map(|record| {
+            StableDiffusionConfig::new()
+                .init(device)
+                .load_record(record)
+        })
 }
 
 fn main() {
     cfg_if::cfg_if! {
         if #[cfg(feature = "wgpu-backend")] {
-            type Backend = WgpuBackend<AutoGraphicsApi, f32, i32>;
+            type Backend = Wgpu<AutoGraphicsApi, f32, i32>;
             let device = WgpuDevice::BestAvailable;
         } else {
             type Backend = LibTorch<f32>;
@@ -66,7 +71,7 @@ fn main() {
     let tokenizer = SimpleTokenizer::new().unwrap();
     println!("Loading model...");
     let sd: StableDiffusion<Backend> = if model_type == "burn" {
-        load_stable_diffusion_model_file(model_name).unwrap_or_else(|err| {
+        load_stable_diffusion_model_file(model_name, &device).unwrap_or_else(|err| {
             eprintln!("Error loading model: {}", err);
             process::exit(1);
         })

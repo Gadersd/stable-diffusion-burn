@@ -20,11 +20,11 @@ pub fn load_group_norm<B: Backend>(
 
     let gamma = load_tensor::<B, 1>("weight", path, device)
         .ok()
-        .unwrap_or_else(|| Tensor::ones_device([n_channel], device))
+        .unwrap_or_else(|| Tensor::ones([n_channel], device))
         .into();
     let beta = load_tensor::<B, 1>("bias", path, device)
         .ok()
-        .unwrap_or_else(|| Tensor::zeros_device([n_channel], device))
+        .unwrap_or_else(|| Tensor::zeros([n_channel], device))
         .into();
 
     Ok(GroupNorm {

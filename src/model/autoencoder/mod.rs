@@ -26,13 +26,14 @@ use std::iter;
 pub struct AutoencoderConfig {}
 
 impl AutoencoderConfig {
-    pub fn init<B: Backend>(&self) -> Autoencoder<B> {
+    pub fn init<B: Backend>(&self, device: &B::Device) -> Autoencoder<B> {
         let encoder =
-            EncoderConfig::new(vec![(128, 128), (128, 256), (256, 512), (512, 512)], 32, 8).init();
-        let decoder =
-            DecoderConfig::new(vec![(512, 512), (512, 512), (512, 256), (256, 128)], 32).init();
-        let quant_conv = Conv2dConfig::new([8, 8], [1, 1]).init();
-        let post_quant_conv = Conv2dConfig::new([4, 4], [1, 1]).init();
+            EncoderConfig::new(vec![(128, 128), (128, 256), (256, 512), (512, 512)], 32, 8)
+                .init(device);
+        let decoder = DecoderConfig::new(vec![(512, 512), (512, 512), (512, 256), (256, 128)], 32)
+            .init(device);
+        let quant_conv = Conv2dConfig::new([8, 8], [1, 1]).init(device);
+        let post_quant_conv = Conv2dConfig::new([4, 4], [1, 1]).init(device);
 
         Autoencoder {
             encoder,
@@ -78,7 +79,7 @@ pub struct EncoderConfig {
 }
 
 impl EncoderConfig {
-    fn init<B: Backend>(&self) -> Encoder<B> {
+    fn init<B: Backend>(&self, device: &B::Device) -> Encoder<B> {
         let n_expanded_channels_initial = self
             .channels
             .first()
@@ -88,7 +89,7 @@ impl EncoderConfig {
 
         let conv_in = Conv2dConfig::new([3, n_expanded_channels_initial], [3, 3])
             .with_padding(PaddingConfig2d::Explicit(1, 1))
-            .init();
+            .init(device);
 
         let blocks = self
             .channels
@@ -96,16 +97,16 @@ impl EncoderConfig {
             .enumerate()
             .map(|(i, &(n_channel_in, n_channel_out))| {
                 let downsample = i != self.channels.len() - 1;
-                EncoderBlockConfig::new(n_channel_in, n_channel_out, downsample).init()
+                EncoderBlockConfig::new(n_channel_in, n_channel_out, downsample).init(device)
             })
             .collect();
 
-        let mid = MidConfig::new(n_expanded_channels_final).init();
-        let norm_out = GroupNormConfig::new(self.n_group, n_expanded_channels_final).init();
+        let mid = MidConfig::new(n_expanded_channels_final).init(device);
+        let norm_out = GroupNormConfig::new(self.n_group, n_expanded_channels_final).init(device);
         let silu = SILU::new();
         let conv_out = Conv2dConfig::new([n_expanded_channels_final, self.n_channels_out], [3, 3])
             .with_padding(PaddingConfig2d::Explicit(1, 1))
-            .init();
+            .init(device);
 
         Encoder {
             conv_in,
@@ -150,7 +151,7 @@ pub struct DecoderConfig {
 }
 
 impl DecoderConfig {
-    fn init<B: Backend>(&self) -> Decoder<B> {
+    fn init<B: Backend>(&self, device: &B::Device) -> Decoder<B> {
         let n_expanded_channels = self
             .channels
             .first()
@@ -160,8 +161,8 @@ impl DecoderConfig {
 
         let conv_in = Conv2dConfig::new([4, n_expanded_channels], [3, 3])
             .with_padding(PaddingConfig2d::Explicit(1, 1))
-            .init();
-        let mid = MidConfig::new(n_expanded_channels).init();
+            .init(device);
+        let mid = MidConfig::new(n_expanded_channels).init(device);
 
         let blocks = self
             .channels
@@ -169,15 +170,15 @@ impl DecoderConfig {
             .enumerate()
             .map(|(i, &(n_channel_in, n_channel_out))| {
                 let upsample = i != self.channels.len() - 1;
-                DecoderBlockConfig::new(n_channel_in, n_channel_out, upsample).init()
+                DecoderBlockConfig::new(n_channel_in, n_channel_out, upsample).init(device)
             })
             .collect();
 
-        let norm_out = GroupNormConfig::new(self.n_group, n_condensed_channels).init();
+        let norm_out = GroupNormConfig::new(self.n_group, n_condensed_channels).init(device);
         let silu = SILU::new();
         let conv_out = Conv2dConfig::new([n_condensed_channels, 3], [3, 3])
             .with_padding(PaddingConfig2d::Explicit(1, 1))
-            .init();
+            .init(device);
 
         Decoder {
             conv_in,
@@ -223,15 +224,15 @@ pub struct EncoderBlockConfig {
 }
 
 impl EncoderBlockConfig {
-    fn init<B: Backend>(&self) -> EncoderBlock<B> {
-        let res1 = ResnetBlockConfig::new(self.n_channels_in, self.n_channels_out).init();
-        let res2 = ResnetBlockConfig::new(self.n_channels_out, self.n_channels_out).init();
+    fn init<B: Backend>(&self, device: &B::Device) -> EncoderBlock<B> {
+        let res1 = ResnetBlockConfig::new(self.n_channels_in, self.n_channels_out).init(device);
+        let res2 = ResnetBlockConfig::new(self.n_channels_out, self.n_channels_out).init(device);
         let downsampler = if self.downsample {
             let padding = Padding::new(0, 1, 0, 1);
             Some(
                 PaddedConv2dConfig::new([self.n_channels_out, self.n_channels_out], 3, padding)
                     .with_stride(2)
-                    .init(),
+                    .init(device),
             )
         } else {
             None
@@ -272,15 +273,15 @@ pub struct DecoderBlockConfig {
 }
 
 impl DecoderBlockConfig {
-    fn init<B: Backend>(&self) -> DecoderBlock<B> {
-        let res1 = ResnetBlockConfig::new(self.n_channels_in, self.n_channels_out).init();
-        let res2 = ResnetBlockConfig::new(self.n_channels_out, self.n_channels_out).init();
-        let res3 = ResnetBlockConfig::new(self.n_channels_out, self.n_channels_out).init();
+    fn init<B: Backend>(&self, device: &B::Device) -> DecoderBlock<B> {
+        let res1 = ResnetBlockConfig::new(self.n_channels_in, self.n_channels_out).init(device);
+        let res2 = ResnetBlockConfig::new(self.n_channels_out, self.n_channels_out).init(device);
+        let res3 = ResnetBlockConfig::new(self.n_channels_out, self.n_channels_out).init(device);
         let upsampler = if self.upsample {
             Some(
                 Conv2dConfig::new([self.n_channels_out, self.n_channels_out], [3, 3])
                     .with_padding(PaddingConfig2d::Explicit(1, 1))
-                    .init(),
+                    .init(device),
             )
         } else {
             None
@@ -333,7 +334,7 @@ pub struct PaddedConv2dConfig {
 }
 
 impl PaddedConv2dConfig {
-    fn init<B: Backend>(&self) -> PaddedConv2d<B> {
+    fn init<B: Backend>(&self, device: &B::Device) -> PaddedConv2d<B> {
         let calc_padding = |p_left, p_right| {
             let n = if p_left >= p_right {
                 0
@@ -351,7 +352,7 @@ impl PaddedConv2dConfig {
         let conv = Conv2dConfig::new(self.channels, [self.kernel_size, self.kernel_size])
             .with_stride([self.stride, self.stride])
             .with_padding(PaddingConfig2d::Explicit(pad_vertical, pad_horizontal))
-            .init();
+            .init(device);
 
         let kernel_size = self.kernel_size;
         let stride = self.stride;
@@ -420,10 +421,10 @@ pub struct MidConfig {
 }
 
 impl MidConfig {
-    fn init<B: Backend>(&self) -> Mid<B> {
-        let block_1 = ResnetBlockConfig::new(self.n_channel, self.n_channel).init();
-        let attn = ConvSelfAttentionBlockConfig::new(self.n_channel).init();
-        let block_2 = ResnetBlockConfig::new(self.n_channel, self.n_channel).init();
+    fn init<B: Backend>(&self, device: &B::Device) -> Mid<B> {
+        let block_1 = ResnetBlockConfig::new(self.n_channel, self.n_channel).init(device);
+        let attn = ConvSelfAttentionBlockConfig::new(self.n_channel).init(device);
+        let block_2 = ResnetBlockConfig::new(self.n_channel, self.n_channel).init(device);
 
         Mid {
             block_1,
@@ -456,17 +457,17 @@ pub struct ResnetBlockConfig {
 }
 
 impl ResnetBlockConfig {
-    fn init<B: Backend>(&self) -> ResnetBlock<B> {
-        let norm1 = GroupNormConfig::new(32, self.in_channels).init();
+    fn init<B: Backend>(&self, device: &B::Device) -> ResnetBlock<B> {
+        let norm1 = GroupNormConfig::new(32, self.in_channels).init(device);
         let conv1 = Conv2dConfig::new([self.in_channels, self.out_channels], [3, 3])
             .with_padding(PaddingConfig2d::Explicit(1, 1))
-            .init();
-        let norm2 = GroupNormConfig::new(32, self.out_channels).init();
+            .init(device);
+        let norm2 = GroupNormConfig::new(32, self.out_channels).init(device);
         let conv2 = Conv2dConfig::new([self.out_channels, self.out_channels], [3, 3])
             .with_padding(PaddingConfig2d::Explicit(1, 1))
-            .init();
+            .init(device);
         let nin_shortcut = if self.in_channels != self.out_channels {
-            Some(Conv2dConfig::new([self.in_channels, self.out_channels], [1, 1]).init())
+            Some(Conv2dConfig::new([self.in_channels, self.out_channels], [1, 1]).init(device))
         } else {
             None
         };
@@ -520,12 +521,12 @@ pub struct ConvSelfAttentionBlockConfig {
 }
 
 impl ConvSelfAttentionBlockConfig {
-    fn init<B: Backend>(&self) -> ConvSelfAttentionBlock<B> {
-        let norm = GroupNormConfig::new(32, self.n_channel).init();
-        let q = Conv2dConfig::new([self.n_channel, self.n_channel], [1, 1]).init();
-        let k = Conv2dConfig::new([self.n_channel, self.n_channel], [1, 1]).init();
-        let v = Conv2dConfig::new([self.n_channel, self.n_channel], [1, 1]).init();
-        let proj_out = Conv2dConfig::new([self.n_channel, self.n_channel], [1, 1]).init();
+    fn init<B: Backend>(&self, device: &B::Device) -> ConvSelfAttentionBlock<B> {
+        let norm = GroupNormConfig::new(32, self.n_channel).init(device);
+        let q = Conv2dConfig::new([self.n_channel, self.n_channel], [1, 1]).init(device);
+        let k = Conv2dConfig::new([self.n_channel, self.n_channel], [1, 1]).init(device);
+        let v = Conv2dConfig::new([self.n_channel, self.n_channel], [1, 1]).init(device);
+        let proj_out = Conv2dConfig::new([self.n_channel, self.n_channel], [1, 1]).init(device);
 
         ConvSelfAttentionBlock {
             norm,
@@ -574,6 +575,7 @@ impl<B: MyBackend> ConvSelfAttentionBlock<B> {
             v.into_primitive(),
             None,
             1,
+            &x.device(),
         ))
         .swap_dims(1, 2)
         .reshape([n_batch, n_channel, height, width]);

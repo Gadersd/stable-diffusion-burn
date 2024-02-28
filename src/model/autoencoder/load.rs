@@ -87,7 +87,7 @@ fn load_padded_conv2d<B: Backend>(
 
     let mut padded_conv: PaddedConv2d<B> = PaddedConv2dConfig::new(channels, kernel_size, padding)
         .with_stride(stride)
-        .init();
+        .init(device);
     let padding_actual =
         PaddingConfig2d::Explicit(padded_conv.padding_actual[0], padded_conv.padding_actual[1]);
 

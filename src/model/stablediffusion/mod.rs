@@ -3,7 +3,10 @@ pub mod load;
 use burn::{
     config::Config,
     module::{Module, Param},
-    tensor::{backend::Backend, BasicOps, Data, Distribution, Float, Int, Tensor},
+    tensor::{
+        backend::Backend, ops::FloatElem, BasicOps, Data, Distribution, ElementConversion, Float,
+        Int, Tensor,
+    },
 };
 
 use num_traits::ToPrimitive;
@@ -19,13 +22,13 @@ use crate::tokenizer::SimpleTokenizer;
 pub struct StableDiffusionConfig {}
 
 impl StableDiffusionConfig {
-    pub fn init<B: Backend>(&self) -> StableDiffusion<B> {
+    pub fn init<B: Backend>(&self, device: &B::Device) -> StableDiffusion<B> {
         let n_steps = 1000;
-        let alpha_cumulative_products = offset_cosine_schedule_cumprod::<B>(n_steps).into();
+        let alpha_cumulative_products = offset_cosine_schedule_cumprod::<B>(n_steps, device).into();
 
-        let autoencoder = AutoencoderConfig::new().init();
-        let diffusion = UNetConfig::new().init();
-        let clip = CLIPConfig::new(49408, 768, 12, 77, 12).init();
+        let autoencoder = AutoencoderConfig::new().init(device);
+        let diffusion = UNetConfig::new().init(device);
+        let clip = CLIPConfig::new(49408, 768, 12, 77, 12).init(device);
 
         StableDiffusion {
             n_steps,
@@ -112,8 +115,12 @@ impl<B: MyBackend> StableDiffusion<B> {
         let [n_batches, _, _] = context.dims();
 
         let gen_noise = || {
-            Tensor::random([n_batches, 4, 64, 64], Distribution::Normal(0.0, 1.0))
-                .to_device(&device)
+            Tensor::random(
+                [n_batches, 4, 64, 64],
+                Distribution::Normal(0.0, 1.0),
+                &device,
+            )
+            .to_device(&device)
         };
 
         let sigma = 0.0; // Use deterministic diffusion
@@ -142,7 +149,7 @@ impl<B: MyBackend> StableDiffusion<B> {
 
             let sqrt_noise = (1.0 - current_alpha).sqrt();
 
-            let timestep = Tensor::from_ints([t as i32]).to_device(&device);
+            let timestep = Tensor::from_ints([t as i32], &device).to_device(&device);
             let pred_noise = self.forward_diffuser(
                 latent.clone(),
                 timestep,
@@ -206,34 +213,35 @@ impl<B: MyBackend> StableDiffusion<B> {
             .collect();
 
         self.clip.forward(
-            Tensor::from_ints(&tokenized[..])
+            Tensor::from_ints(&tokenized[..], device)
                 .to_device(device)
                 .unsqueeze(),
         )
     }
 }
 
-use std::f64::consts::PI;
+use std::{f64::consts::PI, primitive};
 
-fn cosine_schedule<B: Backend>(n_steps: usize) -> Tensor<B, 1> {
-    Tensor::arange(1..n_steps + 1)
+fn cosine_schedule<B: Backend>(n_steps: usize, device: &B::Device) -> Tensor<B, 1> {
+    Tensor::arange(1..n_steps + 1, device)
         .float()
         .mul_scalar(PI * 0.5 / n_steps as f64)
         .cos()
 }
 
-fn offset_cosine_schedule<B: Backend>(n_steps: usize) -> Tensor<B, 1> {
+fn offset_cosine_schedule<B: Backend>(n_steps: usize, device: &B::Device) -> Tensor<B, 1> {
     let min_signal_rate: f64 = 0.02;
     let max_signal_rate: f64 = 0.95;
     let start_angle = max_signal_rate.acos();
     let end_angle = min_signal_rate.acos();
 
-    let times = Tensor::arange(1..n_steps + 1).float();
+    let times = Tensor::arange(1..n_steps + 1, device).float();
 
     let diffusion_angles = times * ((end_angle - start_angle) / n_steps as f64) + start_angle;
     diffusion_angles.cos()
 }
 
-fn offset_cosine_schedule_cumprod<B: Backend>(n_steps: usize) -> Tensor<B, 1> {
-    offset_cosine_schedule::<B>(n_steps).powf(2.0)
+fn offset_cosine_schedule_cumprod<B: Backend>(n_steps: usize, device: &B::Device) -> Tensor<B, 1> {
+    let t = offset_cosine_schedule::<B>(n_steps, device);
+    Tensor::from_primitive(B::float_powf_scalar(t.into_primitive(), 2.0))
 }
