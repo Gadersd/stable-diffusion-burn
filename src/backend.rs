@@ -68,6 +68,7 @@ impl<E: TchElement> Backend for burn_tch::TchBackend<E> {
                 Some(mask.tensor),
                 0.0,
                 false,
+                None
             ),
         ))
         .swap_dims(1, 2)
