@@ -11,7 +11,7 @@ use burn::{
     tensor::{backend::Backend, Tensor},
 };
 
-use burn_ndarray::{NdArrayBackend, NdArrayDevice};
+use burn_ndarray::{NdArray, NdArrayDevice};
 
 use burn::record::{self, BinFileRecorder, FullPrecisionSettings, Recorder};
 
@@ -37,7 +37,7 @@ fn save_model_file<B: Backend>(
 }
 
 fn main() {
-    type Backend = NdArrayBackend<f32>;
+    type Backend = NdArray<f32>;
     let device = NdArrayDevice::Cpu;
 
     let args: Vec<String> = env::args().collect();

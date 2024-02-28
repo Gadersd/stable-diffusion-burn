@@ -15,10 +15,10 @@ git = "https://github.com/burn-rs/burn.git"
 optional = true
 
 [dependencies]
-burn = "0.10.0"
-burn-ndarray = "0.10.0"
-burn-tch = "0.10.0"
-burn-autodiff =  "0.10.0"
+burn = "0.11.0"
+burn-ndarray = "0.11.0"
+burn-tch = "0.11.0"
+burn-autodiff =  "0.11.0"
 tch = "0.14.0"
 torch-sys = "0.14.0"
 serde = {version = "1.0.171", features = ["std", "derive"]}

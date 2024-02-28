@@ -28,7 +28,7 @@ use burn::tensor::Float;
 use burn_tch::{self, TchElement, TchTensor};
 use tch;
 
-impl<E: TchElement> Backend for burn_tch::TchBackend<E> {
+impl<E: TchElement> Backend for burn_tch::LibTorch<E> {
     fn qkv_attention(
         q: Self::TensorPrimitive<3>,
         k: Self::TensorPrimitive<3>,
@@ -79,7 +79,7 @@ impl<E: TchElement> Backend for burn_tch::TchBackend<E> {
 
 use burn_autodiff;
 
-impl<B: Backend> Backend for burn_autodiff::ADBackendDecorator<B> {}
+impl<B: Backend> Backend for burn_autodiff::Autodiff<B> {}
 
 use std::f32::NEG_INFINITY;
 
