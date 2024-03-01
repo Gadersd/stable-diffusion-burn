@@ -15,7 +15,7 @@ pub struct GroupNormConfig {
 }
 
 impl GroupNormConfig {
-    pub fn init<B: Backend>(&self) -> GroupNorm<B> {
+    pub fn init<B: Backend>(&self, device: &B::Device) -> GroupNorm<B> {
         assert!(
             self.n_channel % self.n_group == 0,
             "The number of channels {} must be divisible by the number of groups {}",
@@ -25,8 +25,8 @@ impl GroupNormConfig {
 
         let n_per_group = self.n_channel / self.n_group;
 
-        let gamma = Tensor::ones([self.n_channel]).into();
-        let beta = Tensor::zeros([self.n_channel]).into();
+        let gamma = Tensor::ones([self.n_channel], device).into();
+        let beta = Tensor::zeros([self.n_channel], device).into();
 
         let eps = self.eps;
 

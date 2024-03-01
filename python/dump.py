@@ -11,12 +11,11 @@ import gzip, argparse, math, re
 from functools import lru_cache
 from collections import namedtuple
 
-from tqdm import tqdm
-from tinygrad.tensor import Tensor
-from tinygrad.helpers import dtypes, GlobalCounters
+from tinygrad import Tensor
 from tinygrad.nn import Conv2d, Linear, GroupNorm, LayerNorm, Embedding
-from extra.utils import download_file
-from tinygrad.state import torch_load, load_state_dict
+from tinygrad.nn.state import torch_load, load_state_dict
+
+#from extra.utils import download_file
 
 # TODO: refactor AttnBlock, CrossAttention, CLIPAttention to share code
 
