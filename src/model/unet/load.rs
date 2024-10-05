@@ -65,7 +65,7 @@ pub fn load_geglu<B: Backend>(path: &str, device: &B::Device) -> Result<GEGLU<B>
 
     let geglue = GEGLU {
         proj: proj,
-        gelu: GELU::new(), // Assuming GELU::new() initializes a new GELU struct
+        gelu: Gelu::new(), // Assuming Gelu::new() initializes a new Gelu struct
     };
 
     Ok(geglue)

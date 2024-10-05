@@ -11,9 +11,9 @@ use burn::{
     tensor::{backend::Backend, Tensor},
 };
 
-use burn_ndarray::{NdArrayBackend, NdArrayDevice};
+use burn_ndarray::{NdArray, NdArrayDevice};
 
-use burn::record::{self, BinFileRecorder, FullPrecisionSettings, Recorder};
+use burn::record::{self, NamedMpkFileRecorder, FullPrecisionSettings, Recorder};
 
 fn convert_dump_to_model<B: Backend>(
     dump_path: &str,
@@ -33,11 +33,11 @@ fn save_model_file<B: Backend>(
     model: StableDiffusion<B>,
     name: &str,
 ) -> Result<(), record::RecorderError> {
-    BinFileRecorder::<FullPrecisionSettings>::new().record(model.into_record(), name.into())
+    NamedMpkFileRecorder::<FullPrecisionSettings>::new().record(model.into_record(), name.into())
 }
 
 fn main() {
-    type Backend = NdArrayBackend<f32>;
+    type Backend = NdArray<f32>;
     let device = NdArrayDevice::Cpu;
 
     let args: Vec<String> = env::args().collect();

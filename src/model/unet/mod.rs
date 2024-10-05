@@ -6,7 +6,7 @@ use burn::{
     nn::{
         self,
         conv::{Conv2d, Conv2dConfig},
-        PaddingConfig2d, GELU,
+        PaddingConfig2d, Gelu,
     },
     tensor::{activation::softmax, backend::Backend, module::embedding, Distribution, Int, Tensor},
 };
@@ -22,7 +22,7 @@ fn timestep_embedding<B: Backend>(
     max_period: usize,
 ) -> Tensor<B, 2> {
     let half = dim / 2;
-    let freqs = (Tensor::arange_device(0..half, &timesteps.device()).float()
+    let freqs = (Tensor::arange(0..half as i64, &timesteps.device()).float()
         * (-(max_period as f64).ln() / half as f64))
         .exp();
     let args = timesteps.float() * freqs;
@@ -33,50 +33,50 @@ fn timestep_embedding<B: Backend>(
 pub struct UNetConfig {}
 
 impl UNetConfig {
-    pub fn init<B: Backend>(&self) -> UNet<B> {
-        let lin1_time_embed = nn::LinearConfig::new(320, 1280).init();
+    pub fn init<B: Backend>(&self, device: &B::Device) -> UNet<B> {
+        let lin1_time_embed = nn::LinearConfig::new(320, 1280).init(device);
         let silu_time_embed = SILU::new();
-        let lin2_time_embed = nn::LinearConfig::new(1280, 1280).init();
+        let lin2_time_embed = nn::LinearConfig::new(1280, 1280).init(device);
 
         let input_blocks = UNetInputBlocks {
             conv: Conv2dConfig::new([4, 320], [3, 3])
                 .with_padding(PaddingConfig2d::Explicit(1, 1))
-                .init(),
-            rt1: ResTransformerConfig::new(320, 1280, 320, 768, 8).init(),
-            rt2: ResTransformerConfig::new(320, 1280, 320, 768, 8).init(),
-            d1: DownsampleConfig::new(320).init(),
-            rt3: ResTransformerConfig::new(320, 1280, 640, 768, 8).init(),
-            rt4: ResTransformerConfig::new(640, 1280, 640, 768, 8).init(),
-            d2: DownsampleConfig::new(640).init(),
-            rt5: ResTransformerConfig::new(640, 1280, 1280, 768, 8).init(),
-            rt6: ResTransformerConfig::new(1280, 1280, 1280, 768, 8).init(),
-            d3: DownsampleConfig::new(1280).init(),
-            r1: ResBlockConfig::new(1280, 1280, 1280).init(),
-            r2: ResBlockConfig::new(1280, 1280, 1280).init(),
+                .init(device),
+            rt1: ResTransformerConfig::new(320, 1280, 320, 768, 8).init(device),
+            rt2: ResTransformerConfig::new(320, 1280, 320, 768, 8).init(device),
+            d1: DownsampleConfig::new(320).init(device),
+            rt3: ResTransformerConfig::new(320, 1280, 640, 768, 8).init(device),
+            rt4: ResTransformerConfig::new(640, 1280, 640, 768, 8).init(device),
+            d2: DownsampleConfig::new(640).init(device),
+            rt5: ResTransformerConfig::new(640, 1280, 1280, 768, 8).init(device),
+            rt6: ResTransformerConfig::new(1280, 1280, 1280, 768, 8).init(device),
+            d3: DownsampleConfig::new(1280).init(device),
+            r1: ResBlockConfig::new(1280, 1280, 1280).init(device),
+            r2: ResBlockConfig::new(1280, 1280, 1280).init(device),
         };
 
-        let middle_block = ResTransformerResConfig::new(1280, 1280, 1280, 768, 8).init();
+        let middle_block = ResTransformerResConfig::new(1280, 1280, 1280, 768, 8).init(device);
 
         let output_blocks = UNetOutputBlocks {
-            r1: ResBlockConfig::new(2560, 1280, 1280).init(),
-            r2: ResBlockConfig::new(2560, 1280, 1280).init(),
-            ru: ResUpSampleConfig::new(2560, 1280, 1280).init(),
-            rt1: ResTransformerConfig::new(2560, 1280, 1280, 768, 8).init(),
-            rt2: ResTransformerConfig::new(2560, 1280, 1280, 768, 8).init(),
-            rtu1: ResTransformerUpsampleConfig::new(1920, 1280, 1280, 768, 8).init(),
-            rt3: ResTransformerConfig::new(1920, 1280, 640, 768, 8).init(),
-            rt4: ResTransformerConfig::new(1280, 1280, 640, 768, 8).init(),
-            rtu2: ResTransformerUpsampleConfig::new(960, 1280, 640, 768, 8).init(),
-            rt5: ResTransformerConfig::new(960, 1280, 320, 768, 8).init(),
-            rt6: ResTransformerConfig::new(640, 1280, 320, 768, 8).init(),
-            rt7: ResTransformerConfig::new(640, 1280, 320, 768, 8).init(),
+            r1: ResBlockConfig::new(2560, 1280, 1280).init(device),
+            r2: ResBlockConfig::new(2560, 1280, 1280).init(device),
+            ru: ResUpSampleConfig::new(2560, 1280, 1280).init(device),
+            rt1: ResTransformerConfig::new(2560, 1280, 1280, 768, 8).init(device),
+            rt2: ResTransformerConfig::new(2560, 1280, 1280, 768, 8).init(device),
+            rtu1: ResTransformerUpsampleConfig::new(1920, 1280, 1280, 768, 8).init(device),
+            rt3: ResTransformerConfig::new(1920, 1280, 640, 768, 8).init(device),
+            rt4: ResTransformerConfig::new(1280, 1280, 640, 768, 8).init(device),
+            rtu2: ResTransformerUpsampleConfig::new(960, 1280, 640, 768, 8).init(device),
+            rt5: ResTransformerConfig::new(960, 1280, 320, 768, 8).init(device),
+            rt6: ResTransformerConfig::new(640, 1280, 320, 768, 8).init(device),
+            rt7: ResTransformerConfig::new(640, 1280, 320, 768, 8).init(device),
         };
 
-        let norm_out = GroupNormConfig::new(32, 320).init();
+        let norm_out = GroupNormConfig::new(32, 320).init(device);
         let silu_out = SILU::new();
         let conv_out = Conv2dConfig::new([320, 4], [3, 3])
             .with_padding(PaddingConfig2d::Explicit(1, 1))
-            .init();
+            .init(device);
 
         UNet {
             lin1_time_embed,
@@ -206,16 +206,16 @@ pub struct ResTransformerConfig {
 }
 
 impl ResTransformerConfig {
-    fn init<B: Backend>(&self) -> ResTransformer<B> {
+    fn init<B: Backend>(&self, device: &B::Device) -> ResTransformer<B> {
         let res = ResBlockConfig::new(
             self.n_channels_in,
             self.n_channels_embed,
             self.n_channels_out,
         )
-        .init();
+        .init(device);
         let transformer =
             SpatialTransformerConfig::new(self.n_channels_out, self.n_context_state, self.n_head)
-                .init();
+                .init(device);
 
         ResTransformer { res, transformer }
     }
@@ -243,14 +243,14 @@ pub struct ResUpSampleConfig {
 }
 
 impl ResUpSampleConfig {
-    fn init<B: Backend>(&self) -> ResUpSample<B> {
+    fn init<B: Backend>(&self, device: &B::Device) -> ResUpSample<B> {
         let res = ResBlockConfig::new(
             self.n_channels_in,
             self.n_channels_embed,
             self.n_channels_out,
         )
-        .init();
-        let upsample = UpsampleConfig::new(self.n_channels_out).init();
+        .init(device);
+        let upsample = UpsampleConfig::new(self.n_channels_out).init(device);
 
         ResUpSample { res, upsample }
     }
@@ -280,17 +280,17 @@ pub struct ResTransformerUpsampleConfig {
 }
 
 impl ResTransformerUpsampleConfig {
-    fn init<B: Backend>(&self) -> ResTransformerUpsample<B> {
+    fn init<B: Backend>(&self, device: &B::Device) -> ResTransformerUpsample<B> {
         let res = ResBlockConfig::new(
             self.n_channels_in,
             self.n_channels_embed,
             self.n_channels_out,
         )
-        .init();
+        .init(device);
         let transformer =
             SpatialTransformerConfig::new(self.n_channels_out, self.n_context_state, self.n_head)
-                .init();
-        let upsample = UpsampleConfig::new(self.n_channels_out).init();
+                .init(device);
+        let upsample = UpsampleConfig::new(self.n_channels_out).init(device);
 
         ResTransformerUpsample {
             res,
@@ -326,22 +326,22 @@ pub struct ResTransformerResConfig {
 }
 
 impl ResTransformerResConfig {
-    fn init<B: Backend>(&self) -> ResTransformerRes<B> {
+    fn init<B: Backend>(&self, device: &B::Device) -> ResTransformerRes<B> {
         let res1 = ResBlockConfig::new(
             self.n_channels_in,
             self.n_channels_embed,
             self.n_channels_out,
         )
-        .init();
+        .init(device);
         let transformer =
             SpatialTransformerConfig::new(self.n_channels_out, self.n_context_state, self.n_head)
-                .init();
+                .init(device);
         let res2 = ResBlockConfig::new(
             self.n_channels_in,
             self.n_channels_embed,
             self.n_channels_out,
         )
-        .init();
+        .init(device);
 
         ResTransformerRes {
             res1,
@@ -373,10 +373,10 @@ pub struct UpsampleConfig {
 }
 
 impl UpsampleConfig {
-    fn init<B: Backend>(&self) -> Upsample<B> {
+    fn init<B: Backend>(&self, device: &B::Device) -> Upsample<B> {
         let conv = Conv2dConfig::new([self.n_channels, self.n_channels], [3, 3])
             .with_padding(PaddingConfig2d::Explicit(1, 1))
-            .init();
+            .init(device);
 
         Upsample { conv }
     }
@@ -392,8 +392,7 @@ impl<B: Backend> Upsample<B> {
         let [n_batch, n_channel, height, width] = x.dims();
         let x = x
             .reshape([n_batch, n_channel, height, 1, width, 1])
-            .repeat(3, 2)
-            .repeat(5, 2)
+            .repeat(&[1, 1, 1, 2, 1, 2])
             .reshape([n_batch, n_channel, 2 * height, 2 * width]);
         self.conv.forward(x)
     }
@@ -411,11 +410,11 @@ pub struct DownsampleConfig {
 }
 
 impl DownsampleConfig {
-    fn init<B: Backend>(&self) -> Conv2d<B> {
+    fn init<B: Backend>(&self, device: &B::Device) -> Conv2d<B> {
         Conv2dConfig::new([self.n_channels, self.n_channels], [3, 3])
             .with_stride([2, 2])
             .with_padding(PaddingConfig2d::Explicit(1, 1))
-            .init()
+            .init(device)
     }
 }
 
@@ -435,12 +434,12 @@ pub struct SpatialTransformerConfig {
 }
 
 impl SpatialTransformerConfig {
-    fn init<B: Backend>(&self) -> SpatialTransformer<B> {
-        let norm = GroupNormConfig::new(32, self.n_channels).init();
-        let proj_in = Conv2dConfig::new([self.n_channels, self.n_channels], [1, 1]).init();
+    fn init<B: Backend>(&self, device: &B::Device) -> SpatialTransformer<B> {
+        let norm = GroupNormConfig::new(32, self.n_channels).init(device);
+        let proj_in = Conv2dConfig::new([self.n_channels, self.n_channels], [1, 1]).init(device);
         let transformer =
-            TransformerBlockConfig::new(self.n_channels, self.n_context_state, self.n_head).init();
-        let proj_out = Conv2dConfig::new([self.n_channels, self.n_channels], [1, 1]).init();
+            TransformerBlockConfig::new(self.n_channels, self.n_context_state, self.n_head).init(device);
+        let proj_out = Conv2dConfig::new([self.n_channels, self.n_channels], [1, 1]).init(device);
 
         SpatialTransformer {
             norm,
@@ -489,14 +488,14 @@ pub struct TransformerBlockConfig {
 }
 
 impl TransformerBlockConfig {
-    fn init<B: Backend>(&self) -> TransformerBlock<B> {
-        let norm1 = nn::LayerNormConfig::new(self.n_state).init();
-        let attn1 = MultiHeadAttentionConfig::new(self.n_state, self.n_state, self.n_head).init();
-        let norm2 = nn::LayerNormConfig::new(self.n_state).init();
+    fn init<B: Backend>(&self, device: &B::Device) -> TransformerBlock<B> {
+        let norm1 = nn::LayerNormConfig::new(self.n_state).init(device);
+        let attn1 = MultiHeadAttentionConfig::new(self.n_state, self.n_state, self.n_head).init(device);
+        let norm2 = nn::LayerNormConfig::new(self.n_state).init(device);
         let attn2 =
-            MultiHeadAttentionConfig::new(self.n_state, self.n_context_state, self.n_head).init();
-        let norm3 = nn::LayerNormConfig::new(self.n_state).init();
-        let mlp = MLPConfig::new(self.n_state, 4).init();
+            MultiHeadAttentionConfig::new(self.n_state, self.n_context_state, self.n_head).init(device);
+        let norm3 = nn::LayerNormConfig::new(self.n_state).init(device);
+        let mlp = MLPConfig::new(self.n_state, 4).init(device);
 
         TransformerBlock {
             norm1,
@@ -534,10 +533,10 @@ pub struct MLPConfig {
 }
 
 impl MLPConfig {
-    pub fn init<B: Backend>(&self) -> MLP<B> {
+    pub fn init<B: Backend>(&self, device: &B::Device) -> MLP<B> {
         let n_state_hidden = self.n_state * self.mult;
-        let geglu = GEGLUConfig::new(self.n_state, n_state_hidden).init();
-        let lin = nn::LinearConfig::new(n_state_hidden, self.n_state).init();
+        let geglu = GEGLUConfig::new(self.n_state, n_state_hidden).init(device);
+        let lin = nn::LinearConfig::new(n_state_hidden, self.n_state).init(device);
 
         MLP { geglu, lin }
     }
@@ -562,9 +561,9 @@ pub struct GEGLUConfig {
 }
 
 impl GEGLUConfig {
-    fn init<B: Backend>(&self) -> GEGLU<B> {
-        let proj = nn::LinearConfig::new(self.n_state_in, 2 * self.n_state_out).init();
-        let gelu = GELU::new();
+    fn init<B: Backend>(&self, device: &B::Device) -> GEGLU<B> {
+        let proj = nn::LinearConfig::new(self.n_state_in, 2 * self.n_state_out).init(device);
+        let gelu = Gelu::new();
 
         GEGLU { proj, gelu }
     }
@@ -573,7 +572,7 @@ impl GEGLUConfig {
 #[derive(Module, Debug)]
 pub struct GEGLU<B: Backend> {
     proj: nn::Linear<B>,
-    gelu: GELU,
+    gelu: Gelu,
 }
 
 impl<B: Backend> GEGLU<B> {
@@ -600,7 +599,7 @@ pub struct MultiHeadAttentionConfig {
 }
 
 impl MultiHeadAttentionConfig {
-    fn init<B: Backend>(&self) -> MultiHeadAttention<B> {
+    fn init<B: Backend>(&self, device: &B::Device) -> MultiHeadAttention<B> {
         assert!(
             self.n_state % self.n_head == 0,
             "State size {} must be a multiple of head size {}",
@@ -611,14 +610,14 @@ impl MultiHeadAttentionConfig {
         let n_head = self.n_head;
         let query = nn::LinearConfig::new(self.n_state, self.n_state)
             .with_bias(false)
-            .init();
+            .init(device);
         let key = nn::LinearConfig::new(self.n_context_state, self.n_state)
             .with_bias(false)
-            .init();
+            .init(device);
         let value = nn::LinearConfig::new(self.n_context_state, self.n_state)
             .with_bias(false)
-            .init();
-        let out = nn::LinearConfig::new(self.n_state, self.n_state).init();
+            .init(device);
+        let out = nn::LinearConfig::new(self.n_state, self.n_state).init(device);
 
         MultiHeadAttention {
             n_head,
@@ -661,24 +660,24 @@ pub struct ResBlockConfig {
 }
 
 impl ResBlockConfig {
-    fn init<B: Backend>(&self) -> ResBlock<B> {
-        let norm_in = GroupNormConfig::new(32, self.n_channels_in).init();
+    fn init<B: Backend>(&self, device: &B::Device) -> ResBlock<B> {
+        let norm_in = GroupNormConfig::new(32, self.n_channels_in).init(device);
         let silu_in = SILU::new();
         let conv_in = Conv2dConfig::new([self.n_channels_in, self.n_channels_out], [3, 3])
             .with_padding(PaddingConfig2d::Explicit(1, 1))
-            .init();
+            .init(device);
 
         let silu_embed = SILU::new();
-        let lin_embed = nn::LinearConfig::new(self.n_channels_embed, self.n_channels_out).init();
+        let lin_embed = nn::LinearConfig::new(self.n_channels_embed, self.n_channels_out).init(device);
 
-        let norm_out = GroupNormConfig::new(32, self.n_channels_out).init();
+        let norm_out = GroupNormConfig::new(32, self.n_channels_out).init(device);
         let silu_out = SILU::new();
         let conv_out = Conv2dConfig::new([self.n_channels_out, self.n_channels_out], [3, 3])
             .with_padding(PaddingConfig2d::Explicit(1, 1))
-            .init();
+            .init(device);
 
         let skip_connection = if self.n_channels_in != self.n_channels_out {
-            Some(Conv2dConfig::new([self.n_channels_in, self.n_channels_out], [1, 1]).init())
+            Some(Conv2dConfig::new([self.n_channels_in, self.n_channels_out], [1, 1]).init(device))
         } else {
             None
         };

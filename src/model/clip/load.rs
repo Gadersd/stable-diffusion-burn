@@ -68,7 +68,7 @@ pub fn load_residual_decoder_attention_block<B: Backend>(
 pub fn load_clip<B: Backend>(path: &str, device: &B::Device) -> Result<CLIP<B>, Box<dyn Error>> {
     let token_embedding = load_embedding(&format!("{}/{}", path, "token_embedding"), device)?;
     let position_embedding =
-        load_tensor("weight", &format!("{}/position_embedding", path), device)?.into();
+        Param::from_tensor(load_tensor("weight", &format!("{}/position_embedding", path), device)?);
 
     let n_layer = load_usize::<B>("n_layer", path, device)?;
     let mut blocks = (0..n_layer)

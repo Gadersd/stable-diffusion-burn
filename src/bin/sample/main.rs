@@ -14,7 +14,7 @@ cfg_if::cfg_if! {
     if #[cfg(feature = "wgpu-backend")] {
         use burn_wgpu::{WgpuBackend, WgpuDevice, AutoGraphicsApi};
     } else {
-        use burn_tch::{TchBackend, TchDevice};
+        use burn_tch::{LibTorch, LibTorchDevice};
     }
 }
 
@@ -22,30 +22,21 @@ use std::env;
 use std::io;
 use std::process;
 
-use burn::record::{self, BinFileRecorder, FullPrecisionSettings, Recorder};
+use burn::record::{self, NamedMpkFileRecorder, FullPrecisionSettings, Recorder};
 
 fn load_stable_diffusion_model_file<B: Backend>(
     filename: &str,
+    device: &B::Device,
 ) -> Result<StableDiffusion<B>, record::RecorderError> {
-    BinFileRecorder::<FullPrecisionSettings>::new()
-        .load(filename.into())
-        .map(|record| StableDiffusionConfig::new().init().load_record(record))
+    NamedMpkFileRecorder::<FullPrecisionSettings>::new()
+        .load(filename.into(), device)
+        .map(|record| StableDiffusionConfig::new().init(device).load_record(record))
 }
 
 fn main() {
-    cfg_if::cfg_if! {
-        if #[cfg(feature = "wgpu-backend")] {
-            type Backend = WgpuBackend<AutoGraphicsApi, f32, i32>;
-            let device = WgpuDevice::BestAvailable;
-        } else {
-            type Backend = TchBackend<f32>;
-            let device = TchDevice::Cuda(0);
-        }
-    }
-
     let args: Vec<String> = std::env::args().collect();
-    if args.len() != 7 {
-        eprintln!("Usage: {} <model_type(burn or dump)> <model_name> <unconditional_guidance_scale> <n_diffusion_steps> <prompt> <output_image_name>", args[0]);
+    if args.len() != 7 && args.len() != 8 {
+        eprintln!("Usage: {} <model_type(burn or dump)> <model_name> <unconditional_guidance_scale> <n_diffusion_steps> <prompt> <output_image_name> [device(cuda, mps, cpu)]", args[0]);
         process::exit(1);
     }
 
@@ -62,11 +53,40 @@ fn main() {
     let prompt = &args[5];
     let output_image_name = &args[6];
 
+    // Optional device parameter
+    let device_arg = if args.len() == 8 { Some(&args[7]) } else { None };
+
+    cfg_if::cfg_if! {
+        if #[cfg(feature = "wgpu-backend")] {
+            type Backend = WgpuBackend<AutoGraphicsApi, f32, i32>;
+            let device = WgpuDevice::BestAvailable;
+        } else {
+            type Backend = LibTorch<f32>;
+
+            let device = if let Some(dev_str) = device_arg {
+                match dev_str.to_lowercase().as_str() {
+                    "cpu" => LibTorchDevice::Cpu,
+                    "mps" => LibTorchDevice::Mps,
+                    s if s.starts_with("cuda") => {
+                        let idx = s[4..].parse().unwrap_or(0);
+                        LibTorchDevice::Cuda(idx)
+                    }
+                    _ => {
+                        eprintln!("Unknown device: {}", dev_str);
+                        process::exit(1);
+                    }
+                }
+            } else {
+                LibTorchDevice::Cuda(0)
+            };
+        }
+    }
+
     println!("Loading tokenizer...");
     let tokenizer = SimpleTokenizer::new().unwrap();
     println!("Loading model...");
     let sd: StableDiffusion<Backend> = if model_type == "burn" {
-        load_stable_diffusion_model_file(model_name).unwrap_or_else(|err| {
+        load_stable_diffusion_model_file(model_name, &device).unwrap_or_else(|err| {
             eprintln!("Error loading model: {}", err);
             process::exit(1);
         })
@@ -76,8 +96,6 @@ fn main() {
             process::exit(1);
         })
     };
-
-    let sd = sd.to_device(&device);
 
     let unconditional_context = sd.unconditional_context(&tokenizer);
     let context = sd.context(&tokenizer, prompt).unsqueeze::<3>(); //.repeat(0, 2); // generate 2 samples

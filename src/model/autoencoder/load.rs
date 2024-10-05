@@ -71,7 +71,7 @@ fn load_padded_conv2d<B: Backend>(
     path: &str,
     device: &B::Device,
 ) -> Result<PaddedConv2d<B>, Box<dyn Error>> {
-    let conv = load_conv2d(&format!("{}/{}", path, "conv"), device)?;
+    let mut conv = load_conv2d(&format!("{}/{}", path, "conv"), device)?;
 
     let channels = load_tensor::<B, 1>("channels", path, device)?;
     let channels = tensor_to_array_2(channels);
@@ -81,18 +81,21 @@ fn load_padded_conv2d<B: Backend>(
 
     let padding = load_tensor::<B, 1>("padding", path, device)?;
     let padding: [usize; 4] = tensor_to_array(padding);
-    let padding = Padding::new(padding[0], padding[1], padding[2], padding[3]);
+    let padding = PaddingCfg::new(padding[0], padding[1], padding[2], padding[3]);
 
-    let mut record = conv.into_record();
+    //let mut record = conv.into_record();
 
     let mut padded_conv: PaddedConv2d<B> = PaddedConv2dConfig::new(channels, kernel_size, padding)
         .with_stride(stride)
-        .init();
+        .init(device);
     let padding_actual =
         PaddingConfig2d::Explicit(padded_conv.padding_actual[0], padded_conv.padding_actual[1]);
 
-    record.padding = <PaddingConfig2d as Module<B>>::into_record(padding_actual);
-    padded_conv.conv = padded_conv.conv.load_record(record);
+    conv.padding =  burn::module::Ignored(padding_actual);
+    padded_conv.conv = conv;
+
+    //record.padding = <PaddingConfig2d as Module<B>>::into_record(padding_actual);
+    //padded_conv.conv = padded_conv.conv.load_record(record);
 
     Ok(padded_conv)
 }

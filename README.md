@@ -4,12 +4,14 @@ Stable-Diffusion-Burn is a Rust-based project which ports the V1 stable diffusio
 
 ## How To Use
 
+### Step 0: Install libtorch v2.4.1
+
 ### Step 1: Download the Model and Set Environment Variables
 
-Start by downloading the SDv1-4.bin model provided on HuggingFace.
+Start by downloading the SDv1-4 model provided on HuggingFace.
 
 ```bash
-wget https://huggingface.co/Gadersd/Stable-Diffusion-Burn/resolve/main/V1/SDv1-4.bin
+wget https://huggingface.co/Gadersd/Stable-Diffusion-Burn/resolve/main/SDv1-4.mpk
 ```
 
 ### Step 2: Run the Sample Binary
@@ -18,9 +20,13 @@ Invoke the sample binary provided in the rust code. By default, torch is used. T
 
 ```bash
 # torch (at least 6 GB VRAM, possibly less)
-export TORCH_CUDA_VERSION=cu113
-# Arguments: <model_type(burn or dump)> <model> <unconditional_guidance_scale> <n_diffusion_steps> <prompt> <output_image>
-cargo run --release --bin sample burn SDv1-4 7.5 20 "An ancient mossy stone." img
+# Arguments: <model_type(burn or dump)> <model_name> <unconditional_guidance_scale> <n_diffusion_steps> <prompt> <output_image_name> [cuda, mps, cpu]
+
+# Cuda
+cargo run --release --bin sample burn SDv1-4 7.5 20 "An ancient mossy stone." img cuda
+
+# Mps(Mac)
+cargo run --release --bin sample burn SDv1-4 7.5 20 "An ancient mossy stone." img mps
 
 # wgpu (UNSTABLE)
 # Arguments: <model_type(burn or dump)> <model> <unconditional_guidance_scale> <n_diffusion_steps> <prompt> <output_image>
@@ -33,7 +39,7 @@ This command will generate an image according to the provided prompt, which will
 
 ### Optional: Extract and Convert a Fine-Tuned Model
 
-If users are interested in using a fine-tuned version of stable diffusion, the Python scripts provided in this project can be used to transform a weight dump into a Burn model file. Note: the tinygrad dependency should be installed from source rather than with pip.
+If users are interested in using a fine-tuned version of stable diffusion, the Python scripts provided in this project can be used to transform a weight dump into a Burn model file. This does not work on Windows.
 
 ```bash
 # Step into the Python directory
@@ -41,6 +47,9 @@ cd python
 
 # Download the model, this is just the base v1.4 model as an example
 wget https://huggingface.co/CompVis/stable-diffusion-v-1-4-original/resolve/main/sd-v1-4.ckpt
+
+# Install tinygrad
+pip install -r requirements.txt
 
 # Extract the weights
 CPU=1 python3 dump.py sd-v1-4.ckpt
